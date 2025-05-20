@@ -15,6 +15,7 @@ import data
 from data.transforms import denormalize_img_transforms
 # from data.transforms import make_image_augments
 from warm_cosine_scheduler import GradualWarmupScheduler
+from loguru import logger
 
 class Trainer():
     def __init__(
@@ -56,7 +57,7 @@ class Trainer():
         exp_config = self.experiment.in_config
         if 'wrapper' in exp_config["dataset"] and exp_config["dataset"]["wrapper"] is not None:
             datawrapper_class = getattr(data, exp_config["dataset"]["wrapper"])
-            print("datawrapper_class", datawrapper_class)
+            logger.info("datawrapper_class", datawrapper_class)
             self.datawraper = datawrapper_class(dataset)
         else:
             self.datawraper = data.RealisticDatasetDetrWrapper(dataset)
@@ -321,6 +322,7 @@ class TrainerDetr(Trainer):
     def __init__(self,
                  setup, experiment_tracker, dataset=None, data_split={}, 
                  with_norm=True, with_visualization=False):
+        logger.info(f'data_split: {data_split}')
         super().__init__(setup, experiment_tracker, dataset=dataset, data_split=data_split, 
                          with_norm=with_norm, with_visualization=with_visualization)
         self.denorimalize = denormalize_img_transforms()
@@ -391,9 +393,11 @@ class TrainerDetr(Trainer):
             self.device = 'cpu' if len(self.device) == 0 else self.device[0]
         
         self._add_optimizer(model_without_ddp)
+        logger.info(f'datawraper.loader.train: {self.datawraper.loaders.train}, Len: {len(self.datawraper.loaders.train)}')
         self._add_scheduler(len(self.datawraper.loaders.train))
         self.es_tracking = []  # early stopping init
         start_epoch = self._start_experiment(model, config)
+        logger.info(f'start_epoch: {start_epoch}')
         print('{}::NN training Using device: {}'.format(self.__class__.__name__, self.device))
         
         if self.log_with_visualization:
@@ -424,6 +428,7 @@ class TrainerDetr(Trainer):
             criterion.train()
             self.datawraper.dataset.set_training(True)
             for i, batch in enumerate(train_loader):
+                continue
                 iter_items += 1
                 images, gt = batch['image'], batch['ground_truth']
                 images = images.to(self.device)

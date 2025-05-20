@@ -8,6 +8,7 @@ experiment:
   run_name: Detr2d-V6-final-dif-ce-focal-schd-agp
   run_id: 
   local_dir: ./garment_outputs/Detr2d-V6-final-dif-ce-focal-schd-agp
+  is_training: False
 
 # ----- Dataset-related properties -----
 dataset:

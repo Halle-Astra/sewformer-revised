@@ -4,6 +4,8 @@ import torch
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from loguru import  logger
+
 
 class GradualWarmupScheduler(_LRScheduler):
 
@@ -22,7 +24,9 @@ class GradualWarmupScheduler(_LRScheduler):
                     self.finished = True
                 return self.after_scheduler.get_lr()
             return [base_lr * self.multiplier for base_lr in self.base_lrs]
-        
+
+        logger.info(f'base_lrs: {self.base_lrs}')
+        logger.info(f'total epochs: {self.total_epoch}')
         return [base_lr * ((self.multiplier - 1.) * self.last_epoch / self.total_epoch + 1.) for base_lr in self.base_lrs]
     
     def step(self, epoch=None, metrics=None):

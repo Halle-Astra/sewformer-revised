@@ -160,6 +160,8 @@ if __name__ == "__main__":
             dataname = os.path.basename(img_fn).split(".")[0]
 
             output = shape_model(img_tensor.to(device), return_stitches=True)
+            breakpoint()
+            # print(output)
             _, _, prediction_img = shape_dataset.save_prediction_single(output, 
                                                                         dataname=dataname, 
                                                                         save_to=args.save_root, 

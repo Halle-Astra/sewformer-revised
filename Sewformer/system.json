@@ -1,6 +1,6 @@
 {
-  "output": "path to put the training logs",
-  "datasets_path": "path to the sewfactory",
-  "sim_root": "path to the sim2real images",
+  "output": "e0508/output_training_logs",
+  "datasets_path": "/workspace/programs/sewformer/data-sewfactory/sewfactory",
+  "sim_root": "/workspace/programs/sewformer/data-sewfactory/simimages",
   "wandb_username": ""
 }  

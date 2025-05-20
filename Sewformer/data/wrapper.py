@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, Subset
 
 # My modules
 import data.transforms as transforms
+from loguru import logger
 
 def collate_fn(batches):
     # start_time = time.time()
@@ -58,7 +59,7 @@ class RealisticDatasetDetrWrapper(object):
     """
 
     def __init__(self, in_dataset, known_split=None, batch_size=None, shuffle_train=True):
-        
+        logger.info(f'in_dataset: {in_dataset}')
         self.dataset = in_dataset
         self.data_section_list = ['full', 'train', 'validation', 'test']
 
@@ -113,6 +114,7 @@ class RealisticDatasetDetrWrapper(object):
                                         sampler=full_sampler)
         else:
             self.loaders.full = DataLoader(self.dataset, self.batch_size)
+        logger.info(f'multiprocess? {multiprocess}')
         if self.validation is not None and self.test is not None:
         # if True:
             # we have a loaded split!

@@ -9,6 +9,8 @@ import torch
 from torch import nn
 import wandb as wb
 
+
+from loguru import logger
 # My
 import data
 import models
@@ -246,12 +248,13 @@ class ExperimentWrappper(object):
         
         # Dataset
         data_class = getattr(data, data_config['class'])
-        dataset = data_class(data_root, data_config, gt_caching=True, feature_caching=False)
+        dataset = data_class(data_root, sim_root={}, start_config=data_config, gt_caching=True, feature_caching=False)
 
         datawrapper = data.RealisticDatasetDetrWrapper(dataset, known_split=split, batch_size=batch_size)
         return dataset, datawrapper
     
     def load_detr_model(self, data_config, others=False):
+        logger.info('----------------in_config\n{}----------------'.format(self.in_config))
         model, criterion = models.build_former(self.in_config)
         device = 'cuda:0' if torch.cuda.is_available() else "cpu"
         model = nn.DataParallel(model, device_ids=[device])

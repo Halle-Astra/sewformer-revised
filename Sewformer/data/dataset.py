@@ -31,13 +31,15 @@ from data.panel_classes import PanelClasses
 
 from data.human_body_prior.body_model import BodyModel
 from data.utils import euler_angle_to_rot_6d
-
+from loguru import logger
 
 class GarmentDetrDataset(Dataset):
     def __init__(self, root_dir, sim_root, start_config, gt_caching=False, feature_caching=False, in_transforms=[]):
 
         self.root_path = root_dir
         self.sim_root = sim_root
+        logger.info(f'root_dir: {root_dir}')
+        logger.info(f'sim_root: {sim_root}')
         self.config = {}
         pattern_size_initialized = self.update_config(start_config)
         self.config['class'] = self.__class__.__name__
@@ -219,19 +221,21 @@ class GarmentDetrDataset(Dataset):
 
         folder_elements = None  
         datapoint_name, smpl_name, gt_folder = self.datapoints_names[idx]
-
+        logger.debug(f'datapoint_name: {datapoint_name}, smpl: {smpl_name}, gt_folder: {gt_folder}')
         img, ground_truth, smpl_uv = self._get_sample_info(datapoint_name, gt_folder, smpl_name)
+        logger.debug(f'img: {img}, gtruth: <字典和矩阵内容，放弃展示>, smpl_uv: {smpl_uv}')
         img = rst(img)
         name = os.path.basename(os.path.dirname(gt_folder))
         folder = os.path.dirname(gt_folder)
 
-        if "use_smpl_loss" in self.config and  self.config["use_smpl_loss"]:
+        logger.debug(f'"use_smpl_loss" in self.config and  self.config["use_smpl_loss"] : {"use_smpl_loss" in self.config and  self.config["use_smpl_loss"]}')
+        if "use_smpl_loss" in self.config and  self.config["use_smpl_loss"]: # training: True
             smpl_pos_fn = self.get_smpl_pose_fn(datapoint_name, gt_folder)
             smpl_joint_pose = json.load(open(smpl_pos_fn, "r"))["pose"]
             smpl_joint_pose = [euler_angle_to_rot_6d(p) for p in smpl_joint_pose[1:23]]
             smpl_joint_pose = np.array(smpl_joint_pose).squeeze()
             ground_truth.update({"smpl_joints": smpl_joint_pose})
-        
+        logger.debug(f'data prepare stage1: done')
         if self.is_train and self.config["augment"]:
             img_tensor = self.img_transform(self.geo_tranform(img))
         else:
@@ -408,8 +412,18 @@ class GarmentDetrDataset(Dataset):
             # add smpl root at static pose
             static_pose = json.load(open(gt_folder + "/static__body_info.json", "r"))
             static_root = static_pose["trans"]
-            spec_dict = json.load(open(gt_folder + "/spec_config.json", "r"))
+            # logger.info(f'gt_folder: {gt_folder}')
+            try:
+                spec_dict = json.load(open(gt_folder + "/spec_config.json", "r"))
+            except UnicodeDecodeError as e:
+                logger.error(f'{e}, gt_folder: {gt_folder}')
+                exit(-1)
+            except Exception as e:
+                logger.error(f'{e}, gt_folder: {gt_folder}')
+                exit(-1)
+
             for key, val in spec_dict.items():
+                logger.debug(f'spec name getting: {val["spec"]}')
                 spec = PureWindowsPath(val["spec"]).parts[-1]
                 spec_dict[key]["spec"] = spec
                 spec_dict[key]["delta"] = np.array(val["delta"]) - np.array(static_root)
@@ -525,6 +539,7 @@ class GarmentDetrDataset(Dataset):
                     panel_classifier=self.panel_classifier, 
                     template_name=self.template_name(spec_dict[key]['spec']))
                 self.gt_jsons["specs"][gt_folder + "/" + spec] = pattern
+            logger.debug(f'spec_path when use: {gt_folder+"/"+spec}')
             patterns.append(pattern)
 
         pat_tensor = NNSewingPattern.multi_pattern_as_tensors(patterns,
@@ -611,6 +626,8 @@ class GarmentDetrDataset(Dataset):
         free_mask = (torch.sigmoid(free_mask_logits.squeeze(-1)) > 0.5).flatten()
         if not return_stitches:
             simi_matrix = similarity_matrix + similarity_matrix.transpose(0, 1)
+            print(simi_matrix.shape, free_mask.shape, free_mask.unsqueeze(0).shape)
+            # free_mask是个只有True或False的矩阵，~free_mask是非运算
             simi_matrix = torch.masked_fill(simi_matrix, (~free_mask).unsqueeze(0), -float("inf"))
             simi_matrix = torch.masked_fill(simi_matrix, (~free_mask).unsqueeze(-1), 0)
             num_stitches = free_mask.nonzero().shape[0] // 2

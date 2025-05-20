@@ -49,12 +49,14 @@ data_split:
   split_on: folder
   valid_per_type: 5
   test_per_type: 90
+  # train_per_type: 90
 
 
 # ----- Network Architecture --------
 
 NN:
-  pre-trained:  
+  # when testing, plz set pre-trained
+  pre-trained: /workspace/programs/sewformer/Sewformer/assets/ckpts/Detr2d-V6-final-dif-ce-focal-schd-agp_checkpoint_37.pth
   step-trained: 
   model: GarmentDETRv6
   # Backbone
@@ -98,7 +100,7 @@ NN:
 trainer: 
   dry_run: False
   random_seed: 1
-  batch_size: 64
+  batch_size: 32
   devices: [0]
   without_matcher: true
   epochs: 40

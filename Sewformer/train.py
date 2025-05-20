@@ -27,6 +27,7 @@ import models
 from metrics.eval_detr_metrics import eval_detr_metrics
 from trainer import TrainerDetr
 from experiment import ExperimentWrappper
+from loguru import logger
 
 def get_values_from_args():
     """command line arguments to control the run for running wandb Sweeps!"""
@@ -47,7 +48,6 @@ def get_values_from_args():
 if __name__ == '__main__':
     from pprint import pprint 
     np.set_printoptions(precision=4, suppress=True)
-    import pdb; pdb.set_trace()
     config, args = get_values_from_args()
     system_info = customconfig.Properties('./system.json')
 
@@ -93,7 +93,8 @@ if __name__ == '__main__':
     if not args.test_only:    
         trainer.fit(model, model_without_ddp, criterion, rank, config)
     else:
-        config["loss"]["lepoch"] = -1
+        logger.info(f'config: {config}')
+        config['NN']["loss"]["lepoch"] = -1
         if config["NN"]["pre-trained"] is None or not os.path.exists(config["NN"]["pre-trained"]):
             print("Train::Error:Pre-trained model should be set for test only mode")
             raise ValueError("Pre-trained model should be set for test")
